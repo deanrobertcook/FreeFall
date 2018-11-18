@@ -1,5 +1,6 @@
 package dean.org.freefall
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -7,18 +8,25 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.util.Log
 import android.view.View
 
-class MainActivity: AppCompatActivity(), SensorEventListener {
+fun MainActivity.color(res: Int) =
+        resources.getColor(res)
+
+class MainActivity: AppCompatActivity(), SensorEventListener, ValueAnimator.AnimatorUpdateListener {
 
     companion object {
-        const val TAG = "MainActivity"
         const val ERROR_THRESHOLD = 1.0f
+        const val ANIMATION_DURATION = 700L
     }
 
-    lateinit var sensorManager: SensorManager
-    lateinit var gravitySensor: Sensor
+    private lateinit var sensorManager: SensorManager
+    private lateinit var gravitySensor: Sensor
+
+    lateinit var background: View
+    private lateinit var colorAnimator: ValueAnimator
+
+    private var freeFalling = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,15 +37,23 @@ class MainActivity: AppCompatActivity(), SensorEventListener {
         //if null, the sensor doesn't exist, so we might as well crash at this point
         //with more time, we might show a warning to the user
         gravitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)!!
+
+        background = findViewById<View>(R.id.background)
+
+        colorAnimator = ValueAnimator.ofArgb(color(R.color.panic), color(android.R.color.white))
+        colorAnimator.duration = ANIMATION_DURATION
+
     }
 
     override fun onResume() {
         super.onResume()
         sensorManager.registerListener(this, gravitySensor, SensorManager.SENSOR_DELAY_NORMAL)
+        colorAnimator.addUpdateListener(this)
     }
 
     override fun onPause() {
         sensorManager.unregisterListener(this)
+        colorAnimator.removeAllUpdateListeners()
         super.onPause()
     }
 
@@ -49,17 +65,19 @@ class MainActivity: AppCompatActivity(), SensorEventListener {
 
             val magnitude = Math.sqrt(Math.pow(x, 2.0) + Math.pow(y, 2.0) + Math.pow(z, 2.0))
 
-            if (magnitude < ERROR_THRESHOLD) {
-                Log.d(TAG, "Magnitude of gravity is ${magnitude}m/s^2")
+            if (magnitude < ERROR_THRESHOLD && !freeFalling) {
+                freeFalling = true
+                background.setBackgroundColor(color(R.color.panic))
+
+            } else if (magnitude >= ERROR_THRESHOLD && freeFalling) {
+                colorAnimator.start()
+                freeFalling = false
             }
-
-            val backgroundColor =
-                if (magnitude < (ERROR_THRESHOLD)) {
-                    R.color.panic
-                } else android.R.color.white
-
-            findViewById<View>(R.id.background).setBackgroundColor(resources.getColor(backgroundColor))
         }
+    }
+
+    override fun onAnimationUpdate(animation: ValueAnimator) {
+        background.setBackgroundColor(animation.animatedValue as Int)
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {

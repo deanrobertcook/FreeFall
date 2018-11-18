@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">FreeFall</string>
+    <string name="drop_me">Drop me!\n(Onto something soft, please)</string>
 </resources>
