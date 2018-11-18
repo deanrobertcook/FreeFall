@@ -16,7 +16,7 @@ fun MainActivity.color(res: Int) =
 class MainActivity: AppCompatActivity(), SensorEventListener, ValueAnimator.AnimatorUpdateListener {
 
     companion object {
-        const val ERROR_THRESHOLD = 1.0f
+        const val ERROR_THRESHOLD = 0.25f
         const val ANIMATION_DURATION = 700L
     }
 
@@ -47,7 +47,7 @@ class MainActivity: AppCompatActivity(), SensorEventListener, ValueAnimator.Anim
 
     override fun onResume() {
         super.onResume()
-        sensorManager.registerListener(this, gravitySensor, SensorManager.SENSOR_DELAY_NORMAL)
+        sensorManager.registerListener(this, gravitySensor, SensorManager.SENSOR_DELAY_FASTEST)
         colorAnimator.addUpdateListener(this)
     }
 
